@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Pembuatan Modul PDAM Odoo 17</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-container {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-16">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">Panduan Lengkap Modul PDAM</h1>
+            <p class="text-lg text-slate-600 mt-4">Langkah demi langkah untuk membuat modul pembayaran PDAM di Odoo 17.</p>
+        </header>
+
+        <main class="max-w-4xl mx-auto">
+            <!-- Tahap 1 -->
+            <section id="tahap1" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 1: Inisialisasi Kerangka Modul</h2>
+                <p class="mb-4 text-slate-600">Langkah pertama adalah membuat struktur dasar modul secara otomatis menggunakan perintah `scaffold` dari Odoo.</p>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">Terminal Command</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>docker exec bootcamp-odoo /usr/bin/odoo scaffold pembayaran_pdam /mnt/extra-addons</code></pre>
+                </div>
+            </section>
+
+            <!-- Tahap 2 -->
+            <section id="tahap2" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 2: Konfigurasi Manifest</h2>
+                <p class="mb-4 text-slate-600">Edit file `__manifest__.py` untuk memberikan informasi tentang modul dan mendefinisikan dependensinya. Dependensi ke modul `mail` ditambahkan untuk fitur alur kerja dan *chatter*.</p>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">pembayaran_pdam/__manifest__.py</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>{
+    'name': "Manajemen Pembayaran PDAM",
+    'version': '1.0',
+    'summary': "Modul untuk melacak dan mengelola pembayaran tagihan PDAM.",
+    'description': """
+        Modul ini membantu instansi untuk mencatat, melacak status, 
+        dan mengarsipkan semua tagihan dan pembayaran PDAM.
+    """,
+    'author': "Gemini & Anda",
+    'category': 'Accounting/Finance',
+    'license': 'LGPL-3',
+    'depends': ['base', 'mail'],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/pdam_bill_views.xml',
+    ],
+    'installable': True,
+    'application': True,
+    'auto_install': False,
+}</code></pre>
+                </div>
+            </section>
+            
+            <!-- Tahap 3 -->
+            <section id="tahap3" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 3: Pembuatan Model</h2>
+                <p class="mb-4 text-slate-600">Ini adalah "otak" dari modul, tempat kita mendefinisikan struktur data dan logika bisnis.</p>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden mb-6">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">pembayaran_pdam/models/__init__.py</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>from . import pdam_bill</code></pre>
+                </div>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">pembayaran_pdam/models/pdam_bill.py</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>from odoo import models, fields, api
+from odoo.exceptions import UserError
+
+class PdamBill(models.Model):
+    _name = 'pdam.bill'
+    _description = 'Tagihan Pembayaran PDAM'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _order = 'billing_period_year desc, billing_period_month desc'
+
+    # --- Fields ---
+    name = fields.Char(string="Nomor Tagihan", compute='_compute_name', store=True, readonly=True)
+    customer_id = fields.Char(string="ID Pelanggan", required=True, tracking=True)
+    
+    billing_period_month = fields.Selection([
+        ('01', 'Januari'), ('02', 'Februari'), ('03', 'Maret'), ('04', 'April'),
+        ('05', 'Mei'), ('06', 'Juni'), ('07', 'Juli'), ('08', 'Agustus'),
+        ('09', 'September'), ('10', 'Oktober'), ('11', 'November'), ('12', 'Desember')
+    ], string="Bulan Periode", required=True, tracking=True)
+    billing_period_year = fields.Char(string="Tahun Periode", required=True, tracking=True, default=lambda self: str(fields.Date.today().year))
+
+    meter_start = fields.Float(string="Stand Meter Awal (m³)", tracking=True)
+    meter_end = fields.Float(string="Stand Meter Akhir (m³)", tracking=True)
+    usage_m3 = fields.Float(string="Total Pemakaian (m³)", compute='_compute_usage_m3', store=True, readonly=True)
+
+    currency_id = fields.Many2one('res.currency', string="Mata Uang", default=lambda self: self.env.company.currency_id)
+    base_fee = fields.Monetary(string="Biaya Abonemen", tracking=True)
+    usage_fee = fields.Monetary(string="Biaya Pemakaian", tracking=True)
+    penalty_fee = fields.Monetary(string="Denda", tracking=True)
+    admin_fee = fields.Monetary(string="Biaya Administrasi", tracking=True)
+    amount_total = fields.Monetary(string="Total Tagihan", compute='_compute_amount_total', store=True, readonly=True)
+
+    due_date = fields.Date(string="Tanggal Jatuh Tempo", required=True)
+    payment_date = fields.Date(string="Tanggal Pembayaran", readonly=True, tracking=True)
+    payment_proof = fields.Binary(string="Bukti Pembayaran", attachment=True)
+    responsible_user_id = fields.Many2one('res.users', string="Penanggung Jawab", default=lambda self: self.env.user)
+    
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('unpaid', 'Belum Dibayar'),
+        ('paid', 'Lunas'),
+        ('cancelled', 'Dibatalkan')
+    ], string="Status", default='draft', required=True, tracking=True)
+
+    @api.depends('billing_period_month', 'billing_period_year', 'customer_id')
+    def _compute_name(self):
+        for bill in self:
+            if bill.billing_period_month and bill.billing_period_year and bill.customer_id:
+                month_name = dict(self._fields['billing_period_month'].selection).get(bill.billing_period_month)
+                bill.name = f"PDAM {month_name} {bill.billing_period_year} - {bill.customer_id}"
+            else:
+                bill.name = "Tagihan PDAM Baru"
+
+    @api.depends('meter_start', 'meter_end')
+    def _compute_usage_m3(self):
+        for bill in self:
+            if bill.meter_end >= bill.meter_start:
+                bill.usage_m3 = bill.meter_end - bill.meter_start
+            else:
+                bill.usage_m3 = 0
+
+    @api.depends('base_fee', 'usage_fee', 'penalty_fee', 'admin_fee')
+    def _compute_amount_total(self):
+        for bill in self:
+            bill.amount_total = bill.base_fee + bill.usage_fee + bill.penalty_fee + bill.admin_fee
+            
+    def action_confirm(self):
+        self.write({'state': 'unpaid'})
+
+    def action_mark_as_paid(self):
+        if not self.payment_proof:
+            raise UserError("Harap unggah bukti pembayaran sebelum menandai sebagai lunas.")
+        self.write({'state': 'paid', 'payment_date': fields.Date.today()})
+
+    def action_cancel(self):
+        self.write({'state': 'cancelled'})
+        
+    def action_reset_to_draft(self):
+        self.write({'state': 'draft'})</code></pre>
+                </div>
+            </section>
+
+            <!-- Tahap 4 -->
+            <section id="tahap4" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 4: Pengaturan Hak Akses</h2>
+                <p class="mb-4 text-slate-600">File ini memberikan izin kepada pengguna internal untuk dapat membaca, menulis, membuat, dan menghapus data tagihan PDAM.</p>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">pembayaran_pdam/security/ir.model.access.csv</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pdam_bill_user,pdam.bill.user,model_pdam_bill,base.group_user,1,1,1,1</code></pre>
+                </div>
+            </section>
+
+            <!-- Tahap 5 -->
+            <section id="tahap5" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 5: Tampilan dan Menu</h2>
+                <p class="mb-4 text-slate-600">Ini adalah kode untuk mendefinisikan antarmuka pengguna (UI), termasuk tampilan daftar, formulir, filter pencarian, dan menu. Kode ini telah disesuaikan untuk Odoo 17, menggunakan `invisible` sebagai pengganti `states`.</p>
+                <div class="code-container bg-slate-800 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center px-4 py-2 bg-slate-900">
+                        <span class="text-sm font-semibold text-slate-300">pembayaran_pdam/views/pdam_bill_views.xml</span>
+                        <button onclick="copyCode(this)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md transition-colors">Salin Kode</button>
+                    </div>
+                    <pre class="p-4 text-slate-100 text-sm overflow-x-auto"><code>&lt;odoo&gt;
+    &lt;record id="view_pdam_bill_form" model="ir.ui.view"&gt;
+        &lt;field name="name"&gt;pdam.bill.form&lt;/field&gt;
+        &lt;field name="model"&gt;pdam.bill&lt;/field&gt;
+        &lt;field name="arch" type="xml"&gt;
+            &lt;form string="Tagihan PDAM"&gt;
+                &lt;header&gt;
+                    &lt;button name="action_confirm" string="Konfirmasi Tagihan" type="object" class="oe_highlight" invisible="[('state', '!=', 'draft')]" /&gt;
+                    &lt;button name="action_mark_as_paid" string="Tandai Lunas" type="object" class="oe_highlight" invisible="[('state', '!=', 'unpaid')]" /&gt;
+                    &lt;button name="action_cancel" string="Batalkan" type="object" invisible="[('state', '!=', 'unpaid')]" /&gt;
+                    &lt;button name="action_reset_to_draft" string="Set ke Draft" type="object" invisible="[('state', 'not in', ('cancelled', 'unpaid'))]" /&gt;
+                    &lt;field name="state" widget="statusbar" statusbar_visible="draft,unpaid,paid"/&gt;
+                &lt;/header&gt;
+                &lt;sheet&gt;
+                    &lt;div class="oe_title"&gt;
+                        &lt;h1&gt;
+                            &lt;field name="name" readonly="1"/&gt;
+                        &lt;/h1&gt;
+                    &lt;/div&gt;
+                    &lt;group&gt;
+                        &lt;group string="Informasi Pelanggan &amp;amp; Periode"&gt;
+                            &lt;field name="customer_id"/&gt;
+                            &lt;field name="billing_period_month"/&gt;
+                            &lt;field name="billing_period_year"/&gt;
+                            &lt;field name="due_date"/&gt;
+                        &lt;/group&gt;
+                        &lt;group string="Status Pembayaran"&gt;
+                            &lt;field name="responsible_user_id"/&gt;
+                            &lt;field name="payment_date" readonly="1"/&gt;
+                            &lt;field name="currency_id" invisible="1"/&gt;
+                        &lt;/group&gt;
+                    &lt;/group&gt;
+                    &lt;group&gt;
+                        &lt;group string="Detail Pemakaian Meter"&gt;
+                            &lt;field name="meter_start"/&gt;
+                            &lt;field name="meter_end"/&gt;
+                            &lt;field name="usage_m3" readonly="1"/&gt;
+                        &lt;/group&gt;
+                        &lt;group string="Rincian Biaya"&gt;
+                            &lt;field name="base_fee"/&gt;
+                            &lt;field name="usage_fee"/&gt;
+                            &lt;field name="penalty_fee"/&gt;
+                            &lt;field name="admin_fee"/&gt;
+                            &lt;field name="amount_total" class="oe_subtotal_footer_separator" readonly="1"/&gt;
+                        &lt;/group&gt;
+                    &lt;/group&gt;
+                    &lt;group string="Bukti Pembayaran"&gt;
+                        &lt;field name="payment_proof" widget="image" class="oe_avatar"/&gt;
+                    &lt;/group&gt;
+                &lt;/sheet&gt;
+                &lt;div class="oe_chatter"&gt;
+                    &lt;field name="message_follower_ids"/&gt;
+                    &lt;field name="activity_ids"/&gt;
+                    &lt;field name="message_ids"/&gt;
+                &lt;/div&gt;
+            &lt;/form&gt;
+        &lt;/field&gt;
+    &lt;/record&gt;
+
+    &lt;record id="view_pdam_bill_tree" model="ir.ui.view"&gt;
+        &lt;field name="name"&gt;pdam.bill.tree&lt;/field&gt;
+        &lt;field name="model"&gt;pdam.bill&lt;/field&gt;
+        &lt;field name="arch" type="xml"&gt;
+            &lt;tree string="Tagihan PDAM" decoration-info="state == 'draft'" decoration-danger="state == 'unpaid'" decoration-success="state == 'paid'" decoration-muted="state == 'cancelled'"&gt;
+                &lt;field name="name"/&gt;
+                &lt;field name="customer_id"/&gt;
+                &lt;field name="due_date"/&gt;
+                &lt;field name="amount_total" sum="Total"/&gt;
+                &lt;field name="responsible_user_id"/&gt;
+                &lt;field name="state"/&gt;
+            &lt;/tree&gt;
+        &lt;/field&gt;
+    &lt;/record&gt;
+
+    &lt;record id="view_pdam_bill_search" model="ir.ui.view"&gt;
+        &lt;field name="name"&gt;pdam.bill.search&lt;/field&gt;
+        &lt;field name="model"&gt;pdam.bill&lt;/field&gt;
+        &lt;field name="arch" type="xml"&gt;
+            &lt;search&gt;
+                &lt;field name="name" string="Nomor/Periode"/&gt;
+                &lt;field name="customer_id"/&gt;
+                &lt;filter string="Belum Dibayar" name="filter_unpaid" domain="[('state', '=', 'unpaid')]" /&gt;
+                &lt;filter string="Lunas" name="filter_paid" domain="[('state', '=', 'paid')]" /&gt;
+                &lt;group expand="0" string="Group By"&gt;
+                    &lt;filter string="Tahun Periode" name="group_by_year" context="{'group_by': 'billing_period_year'}"/&gt;
+                    &lt;filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/&gt;
+                    &lt;filter string="Penanggung Jawab" name="group_by_responsible" context="{'group_by': 'responsible_user_id'}"/&gt;
+                &lt;/group&gt;
+            &lt;/search&gt;
+        &lt;/field&gt;
+    &lt;/record&gt;
+
+    &lt;record id="action_pdam_bill" model="ir.actions.act_window"&gt;
+        &lt;field name="name"&gt;Tagihan PDAM&lt;/field&gt;
+        &lt;field name="res_model"&gt;pdam.bill&lt;/field&gt;
+        &lt;field name="view_mode"&gt;tree,form&lt;/field&gt;
+        &lt;field name="search_view_id" ref="view_pdam_bill_search"/&gt;
+        &lt;field name="help" type="html"&gt;
+            &lt;p class="o_view_nocontent_smiling_face"&gt;
+                Belum ada tagihan PDAM yang tercatat.
+            &lt;/p&gt;&lt;p&gt;
+                Klik 'Create' untuk mencatat tagihan baru.
+            &lt;/p&gt;
+        &lt;/field&gt;
+    &lt;/record&gt;
+
+    &lt;menuitem id="menu_pdam_root" name="Manajemen PDAM" sequence="20"/&gt;
+    &lt;menuitem id="menu_pdam_bill" name="Tagihan PDAM" parent="menu_pdam_root" action="action_pdam_bill" sequence="10"/&gt;
+&lt;/odoo&gt;</code></pre>
+                </div>
+            </section>
+            
+            <!-- Tahap 6 -->
+            <section id="tahap6" class="mb-12 p-6 bg-white rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-2xl font-bold mb-4 text-slate-900">Tahap 6: Instalasi dan Verifikasi</h2>
+                <p class="mb-4 text-slate-600">Langkah terakhir adalah menerapkan semua perubahan dan menguji hasilnya di Odoo.</p>
+                <ul class="list-disc list-inside space-y-2 text-slate-600">
+                    <li>Pastikan semua file di atas sudah disimpan di direktori yang benar.</li>
+                    <li>Restart kontainer Docker Anda dengan perintah: <code class="bg-slate-200 text-sm font-mono p-1 rounded">docker restart bootcamp-odoo</code></li>
+                    <li>Buka Odoo, aktifkan <strong>Mode Developer</strong>.</li>
+                    <li>Pergi ke menu <strong>Apps</strong>, lalu klik <strong>Update Apps List</strong>.</li>
+                    <li>Cari modul "Manajemen Pembayaran PDAM" dan klik <strong>Install/Upgrade</strong>.</li>
+                    <li>Menu baru "Manajemen PDAM" akan muncul dan siap digunakan.</li>
+                </ul>
+            </section>
+        </main>
+        
+        <footer class="text-center mt-12 text-slate-500">
+            <p>&copy; 2025 - Dibuat dengan Bantuan Gemini</p>
+        </footer>
+    </div>
+
+    <script>
+        // Fungsi untuk menyalin kode ke clipboard
+        function copyCode(button) {
+            const pre = button.parentElement.nextElementSibling;
+            const code = pre.querySelector('code').innerText;
+            
+            // Menggunakan textarea sementara untuk menyalin teks
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            // Memberikan umpan balik visual
+            const originalText = button.innerText;
+            button.innerText = 'Tersalin!';
+            button.classList.add('bg-green-500', 'hover:bg-green-500');
+            
+            setTimeout(() => {
+                button.innerText = originalText;
+                button.classList.remove('bg-green-500', 'hover:bg-green-500');
+            }, 2000);
+        }
+    </script>
+
+</body>
+</html>
